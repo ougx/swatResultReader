@@ -11,14 +11,9 @@ usage:
 """
 
 
-TxtInOut = r'D:\WorkSync\CPNRD-UnSWAT\ArcSWAT_2021\Scenarios\Default-Irrigation\TxtInOut'
-
-
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
-from urllib.request import urlopen
 import datetime
 #%% SWAT_reader class
 class swat_reader():
@@ -28,7 +23,7 @@ class swat_reader():
         self.read_cio()
     
     def __repr__(self):
-        return f'SWAT Model at {self.TxtInOut}'
+        return 'SWAT Model at {}'.format(self.TxtInOut)
         
     def read_cio(self,):
         '''
@@ -41,7 +36,7 @@ class swat_reader():
         '''
         self.cio = dict()
         lines_to_skip = tuple(range(7)) + (11, 33) + tuple(range(33, 41)) + (45, 47, 53, 57) + tuple(range(62, 73)) + (77, )
-        with open(os.path.join(TxtInOut, 'file.cio')) as f:
+        with open(os.path.join(self.TxtInOut, 'file.cio')) as f:
             for i, l in enumerate(f):
                 if i in lines_to_skip:
                     continue
@@ -49,7 +44,15 @@ class swat_reader():
                     val, key = l.split('|')
                     key = key[:key.index(':')].strip()
                     self.cio[key] = val.strip()
+        
+        
+        # self.output_start_date = pd.DateOffset(pd.Timestamp('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NYSKIP"]))), day=int(self.cio["IDAF"])-1)
+        # self.output_end_date   = pd.DateOffset(pd.Timestamp('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NBYR"])-1)), day=int(self.cio["IDAL"])-1)       
     
+        self.output_start_date = np.datetime64('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NYSKIP"]))) + \
+                                 np.timedelta64(0 if self.cio["NYSKIP"]>'0' else int(self.cio["IDAF"]) - 1, 'D')
+        self.output_end_date   = np.datetime64('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NBYR"])-1)) + \
+                                 np.timedelta64(int(self.cio["IDAL"]) -1, 'D')
     
     def read_sub(self):
         '''
@@ -92,7 +95,7 @@ class swat_reader():
                   "    WTMPdegc"]
         cols_first = 'TYPE RCH GIS MO DA YR AREAkm2'.split() if self.cio['ICALEN'] == '1' else 'TYPE RCH GIS MON AREAkm2'.split()
                                                                           
-        widths = [6, 5, 10, 3, 3, 5, 13] if self.cio['ICALEN'] == '1' else [6, 4, 9, 6, 12]
+        widths = [6, 5, 10, 3, 3, 5, 13] if self.cio['ICALEN'] == '1' else [6, 5, 9, 6, 12]
         return cols_first + [c.strip() for c in columns], widths + [12] * len(columns)
         
     def read_rch(self):
@@ -105,18 +108,25 @@ class swat_reader():
             DESCRIPTION.
 
         '''
-        with open(os.path.join(self.TxtInOut, 'output.rch')) as f:
+        fpath = os.path.join(self.TxtInOut, 'output.rch')
+        
+        assert os.path.exists(fpath), '{} does not exist. Make sure the model run has completed.'.format(fpath)
+        
+        with open(fpath) as f:
             columns, widths = self.get_rch_header_width()
-            dat = pd.read_fwf(f, skiprows=9, header=None, widths=widths, columns=columns)
+            dat = pd.read_fwf(f, skiprows=9, header=None, widths=widths)
             dat.columns = columns
             if self.cio['ICALEN'] == '1': 
                 dat.index = dat.apply(lambda x: datetime.datetime(x.YR, x.MO, x.DA), axis=1)
             else:
                 # TODO: may need to change if the starting date is not Januray 1
-                start_date = pd.DateOffset(pd.Timestamp(f'{int(self.cio["IYR"])+int(self.cio["NYSKIP"])}-01-01'), day=int(self.cio["IDAF"])-1)
-                end_date   = pd.DateOffset(pd.Timestamp(f'{int(self.cio["IYR"])+int(self.cio["NBYR"])-1}-01-01'), day=int(self.cio["IDAL"])-1)
                 step = {'0':'M', '1':'D', '2':'A'}
-                dat.index = np.tile(pd.date_range(start_date, end_date, freq=step[self.cio['IPRINT']]), )
+                nsub = dat.RCH.max()
+                dat = dat[dat.MON <= 366] # remove the annual output
+                if self.cio['IPRINT'] == 0: # remove the ending statistics
+                    dat = dat.iloc[:-nsub]                    
+                date_index = pd.date_range(self.output_start_date, self.output_end_date, freq=step[self.cio['IPRINT']])
+                dat.index = np.repeat(date_index, nsub)
                 dat.index.name = 'time'
         return dat.iloc[:, [1] + list(range(columns.index('AREAkm2')+1, len(columns)))]
     
@@ -153,3 +163,12 @@ class swat_reader():
             df_filter = df_filter.reset_index().set_index([unit, 'time']).sort_index()
             
         return df_filter
+#%%    
+def test_cls():
+    TxtInOut = r"C:\Users\Michael Ou\OneDrive\!Dissertation\SWAT_HYDRUS\@TxtInOut"   
+    swatreader = swat_reader(TxtInOut)
+    
+    pd.DateOffset(pd.Timestamp('{}-01-01'.format(int(swatreader.cio["IYR"])+int(swatreader.cio["NYSKIP"]))), day=int(swatreader.cio["IDAF"])-1)
+    np.datetime64('{}-01-01'.format(int(swatreader.cio["IYR"])+int(swatreader.cio["NYSKIP"]))) + 1
+    
+    df_out = swatreader.read_rch()

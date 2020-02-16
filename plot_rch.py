@@ -16,7 +16,6 @@ usage:
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-from urllib.request import urlopen
 
 from swat_reader import swat_reader
 from usgs_water_data_reader import usgs_data_reader
@@ -82,16 +81,16 @@ if __name__ == '__main__':
                 fig, ax = plt.subplots(figsize=(8, 5))
                 for h in args.subbasin:
                     df_filter[v][h].plot(ax=ax, legend=True, label=f'Subbasin {h}')
-                ax.set_ylabel(f'Simulated streamflow ({length_label[args.unit]}/{time_label[args.timeunit]})')
-                fig.savefig(os.path.join(args.output, f'{args.prefix}{v}.png'), dpi=300, bbox_inches='tight')
+                ax.set_ylabel('Streamflow ({}/{})'.format(length_label[args.unit], time_label[args.timeunit]))
+                fig.savefig(os.path.join(args.output, '{}{}.png'.format(args.prefix, v)), dpi=300, bbox_inches='tight')
                 
             else:
                 for h in args.subbasin:
                     fig, ax = plt.subplots(figsize=(8, 5))
                     df_filter[v][h].plot(ax=ax)
-                    ax.set_title(f'Simulated discharge for Subbasin {h}')
-                    ax.set_ylabel(f'Streamflow ({length_label[args.unit]}$^3$/{time_label[args.timeunit]})')
-                    fig.savefig(os.path.join(args.output, f'{args.prefix}{v}-{h}.png'), dpi=300, bbox_inches='tight')
+                    ax.set_title('Simulated discharge for Subbasin {}'.format(h))
+                    ax.set_ylabel('Streamflow ({}/{})'.format(length_label[args.unit], time_label[args.timeunit]))
+                    fig.savefig(os.path.join(args.output, '{}{}-{}.png'.format(args.prefix, v, h)), dpi=300, bbox_inches='tight')
         
         else:
             
@@ -99,17 +98,18 @@ if __name__ == '__main__':
             if args.p1:
                 fig, ax = plt.subplots(figsize=(8, 5))
                 for h in args.subbasin:
-                    df_filter[v][h].plot(ax=ax, legend=True, label=f'Subbasin {h}')
-                ax.set_ylabel(f'{v}')
-                fig.savefig(os.path.join(args.output, f'{args.prefix}{v}.png'), dpi=300, bbox_inches='tight')
+                    df_filter[v][h].plot(ax=ax, legend=True, label=f'Subbasin ' + str(h))
+                ax.set_ylabel(v)
+                fig.savefig(os.path.join(args.output, '{}{}.png'.format(args.prefix, v)), dpi=300, bbox_inches='tight')
                 
             else:
                 for h in args.subbasin:
                     fig, ax = plt.subplots(figsize=(8, 5))
                     df_filter[v][h].plot(ax=ax)
-                    ax.set_title(f'{v} for Subbasin {h}')
-                    ax.set_ylabel(f'{v}')
-                    fig.savefig(os.path.join(args.output, f'{args.prefix}{v}-{h}.png'), dpi=300, bbox_inches='tight')
+                    ax.set_title(v + ' for Subbasin ' + str(h))
+                    ax.set_ylabel(v)
+                    fig.savefig(os.path.join(args.output, '{}{}-{}.png'.format(args.prefix, v, h)), dpi=300, bbox_inches='tight')
         
             
 
+    print('Plots are generated successfully at {}'.format(os.path.abspath(args.output)))

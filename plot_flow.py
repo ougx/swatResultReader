@@ -16,12 +16,13 @@ usage:
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-from urllib.request import urlopen
 
 from swat_reader import swat_reader
-from usgs_water_data_reader import usgs_data_reader
+from usgs_water_data_reader import read_usgs_flow
 import argparse
 
+plt.style.use('ggplot')
+    
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot streamflow from SWAT output.rch (against USGS measurements')
     parser.add_argument('TxtInOut', help='TxtInOut directory path, required.')
@@ -31,6 +32,12 @@ if __name__ == '__main__':
     parser.add_argument('-u', '--unit',  default='m', choices=['m','f','af'], help='The unit for flow volume m:meters; f:feet; af:acre-feet')
     parser.add_argument('-t', '--timeunit',  default='s', choices=['s','d'], help='The unit for flow volume s:second; d:day; m:month; y:year')
     parser.add_argument('-p', '--prefix',  default='', help='Prefix for plot file names')
+    parser.add_argument('-l', '--log', action='store_true',  default=False, help='Prefix for plot file names')
+    parser.add_argument('-slw', type=float,  default=1.0, help='Line width for simulated streamflow')
+    parser.add_argument('-olw', type=float,  default=0.8, help='Line width for observed streamflow')
+    parser.add_argument('-sls', type=str,  default='-', help='Line style for simulated streamflow')
+    parser.add_argument('-ols', type=str,  default='-', help='Line style for observed streamflow')
+    parser.add_argument('-fs', '--figsize', default=(8, 4), nargs=2, help='Figure size')
     parser.add_argument('--usgs', nargs='*', help='The USGS site numbers to ')
     parser.add_argument('-n', type=int,   default=100, metavar='minimum_number_record', help='The minimum observation record number of a gauge. \
                         If the number of record during the output period is smaller than this number, the usgs site will not included in the plot. (default: %(default)s).')
@@ -38,8 +45,8 @@ if __name__ == '__main__':
     
     
     # parser.print_help()
-    args = parser.parse_args('D:\\WorkSync\\CPNRD-UnSWAT\\ArcSWAT_2021\\Scenarios\\Default-Irrigation\\TxtInOut -b 8 14 15 22 53 72 84 91 92 93 99 118 119 123\
-            --usgs 06774000 06794650 06772898 06773500 06772775 06772100 06772000 06771500 06769000 06769525 06770500 06770000 06770200 06767500 -p flow -n 100'.split())
+    # args = parser.parse_args('D:\\WorkSync\\CPNRD-UnSWAT\\ArcSWAT_2021\\Scenarios\\Default-Irrigation\\TxtInOut -b 8 14 15 22 53 72 84 91 92 93 99 118 119 123\
+    #         --usgs 06774000 06794650 06772898 06773500 06772775 06772100 06772000 06771500 06769000 06769525 06770500 06770000 06770200 06767500 -p flow -n 100'.split())
     
     args = parser.parse_args()
     
@@ -63,35 +70,42 @@ if __name__ == '__main__':
 
 
     df_filter *= length_factor[args.unit] * time_factor[args.timeunit]
-    df_filter.columns = [f'Simulated']
-    
+    df_filter.columns = ['Simulated']
+    # print('df_fileter:\n', df_filter)
     # download the USGS data
     start_date = df_filter.index.levels[1].min()
     end_date   = df_filter.index.levels[1].max()
+    print('The starting date of the output file is:', start_date)
+    print('The ending date of the output file is  :', end_date)
     for s, u in zip(args.subbasin, args.usgs):
         
         # read flow
-        url  = usgs_data_reader.create_daily_streamflow_url([u], begin_date=f'{start_date:%Y-%m-%d}', end_date=f'{end_date:%Y-%m-%d}')
-        flow = usgs_data_reader.read_usgs_rdb(url) 
+        if swatreader.cio['IPRINT'] == '1': # daily output
+            flow, gauge_names  = read_usgs_flow([u], '{:%Y-%m-%d}'.format(start_date), '{:%Y-%m-%d}'.format(end_date), 'D')
+        elif swatreader.cio['IPRINT'] == '0': # monthly output
+            flow, gauge_names  = read_usgs_flow([u], '{:%Y-%m-%d}'.format(start_date), '{:%Y-%m-%d}'.format(end_date), 'M')
+        else:
+            raise NotImplementedError('IPRINT is {} for annual output.\nPlotting annual output is not supported.'.format(swatreader.cio['IPRINT']))
+            
 
-        # read name of the gauge
-        for l in urlopen(url): 
-            if u.encode() in l: 
-                break
         
+        fig, ax = plt.subplots(figsize=args.figsize)
         
-        fig, ax = plt.subplots(figsize=(8, 5))
-        
-        df_filter.loc[s].plot(ax=ax, label='Simulated', legend=True)
+        df_filter.loc[s].plot(ax=ax, label='Simulated', legend=True, linewidth=args.slw, linestyle=args.sls)
         if flow.shape[0] > args.n:
-            observed = flow.drop(['agency_cd', 'site_no'], axis=1).set_index('datetime').iloc[:,0]
+            
+            observed = flow.drop(['site_no'], axis=1).iloc[:,0]
+                
             observed = pd.to_numeric(observed, errors='coerce').dropna() * length_factor_usgs[args.unit]
             observed.index = pd.DatetimeIndex(observed.index)            
-            observed.plot( ax=ax, label='Observed',  legend=True, linewidth=1)
-            
-        ax.set_title(l[1:].strip().decode())
+            observed.plot( ax=ax, label='Observed',  legend=True, linewidth=args.olw, linestyle=args.ols)
+        
+        if args.log:
+            ax.set_yscale('log')
+        ax.set_title(gauge_names[u])
         ax.set_xlabel('Time')
-        ax.set_ylabel(f'Streamflow ({length_label[args.unit]}/{time_label[args.timeunit]})')
-        fig.savefig(os.path.join(args.output, f'{args.prefix}{s}.png'), dpi=300)
+        ax.set_ylabel('Streamflow ({}/{})'.format(length_label[args.unit], time_label[args.timeunit]))
+        fig.savefig(os.path.join(args.output, '{}{}.png'.format(args.prefix, s)), dpi=300)
 
+    print('Plots are generated successfully at {}'.format(os.path.abspath(args.output)))
 

@@ -14,7 +14,7 @@ usage:
 
 from swat_reader import swat_reader
 import argparse
-
+import os
 
 
 
@@ -58,3 +58,6 @@ if __name__ == '__main__':
    
     # save the csv
     df_save.to_csv(args.output)
+    
+    
+    print('Data are saved successfully at {}'.format(os.path.abspath(args.output)))
