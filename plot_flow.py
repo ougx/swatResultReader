@@ -77,28 +77,42 @@ if __name__ == '__main__':
     end_date   = df_filter.index.levels[1].max()
     print('The starting date of the output file is:', start_date)
     print('The ending date of the output file is  :', end_date)
+    
+    output_dir = args.output
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+    
     for s, u in zip(args.subbasin, args.usgs):
         
         # read flow
-        if swatreader.cio['IPRINT'] == '1': # daily output
-            flow, gauge_names  = read_usgs_flow([u], '{:%Y-%m-%d}'.format(start_date), '{:%Y-%m-%d}'.format(end_date), 'D')
-        elif swatreader.cio['IPRINT'] == '0': # monthly output
-            flow, gauge_names  = read_usgs_flow([u], '{:%Y-%m-%d}'.format(start_date), '{:%Y-%m-%d}'.format(end_date), 'M')
+        
+        # read flow
+        flow, gauge_names  = read_usgs_flow([u], '{:%Y-%m-%d}'.format(start_date), '{:%Y-%m-%d}'.format(end_date), 'D')
+        flow = flow.iloc[:, 1]
+        flow.index = pd.DatetimeIndex(flow.index)
+        if swatreader.cio['IPRINT'] == '0': # monthly output
+            flow = pd.to_numeric(flow).resample('M').mean()
+        elif swatreader.cio['IPRINT'] == '1':
+            pass
         else:
-            raise NotImplementedError('IPRINT is {} for annual output.\nPlotting annual output is not supported.'.format(swatreader.cio['IPRINT']))
-            
+            raise NotImplementedError('IPRINT is {} for annual output.\nPlotting annual output is not supported.'.format(args.iprint))
+        
 
         
         fig, ax = plt.subplots(figsize=args.figsize)
-        
         df_filter.loc[s].plot(ax=ax, label='Simulated', legend=True, linewidth=args.slw, linestyle=args.sls)
+        csv = df_filter.loc[s]
+        csv.columns = ['Simulated']
+        
         if flow.shape[0] > args.n:
             
-            observed = flow.drop(['site_no'], axis=1).iloc[:,0]
+            observed = flow
                 
             observed = pd.to_numeric(observed, errors='coerce').dropna() * length_factor_usgs[args.unit]
             observed.index = pd.DatetimeIndex(observed.index)            
             observed.plot( ax=ax, label='Observed',  legend=True, linewidth=args.olw, linestyle=args.ols)
+            observed.name = 'Observed'
+            csv = pd.concat([csv, observed], axis=1)
         
         if args.log:
             ax.set_yscale('log')
@@ -106,6 +120,7 @@ if __name__ == '__main__':
         ax.set_xlabel('Time')
         ax.set_ylabel('Streamflow ({}/{})'.format(length_label[args.unit], time_label[args.timeunit]))
         fig.savefig(os.path.join(args.output, '{}{}.png'.format(args.prefix, s)), dpi=300)
+        csv.to_csv(os.path.join(args.output, '{}{}.csv'.format(args.prefix, s)))
 
     print('Plots are generated successfully at {}'.format(os.path.abspath(args.output)))
 

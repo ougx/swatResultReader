@@ -69,7 +69,10 @@ if __name__ == '__main__':
     length_factor = dict(m=1., f=35.3147, af=0.000810714)
     length_label = dict(m='meter$^3$', f='feet$^3$', af='acre-feet')
     
-    
+        
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
+        
     for v in args.variable:
         # check if need to do unit conversion
         if v in ['FLOW_INcms', 'FLOW_OUTcms']:

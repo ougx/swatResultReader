@@ -49,10 +49,10 @@ class swat_reader():
         # self.output_start_date = pd.DateOffset(pd.Timestamp('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NYSKIP"]))), day=int(self.cio["IDAF"])-1)
         # self.output_end_date   = pd.DateOffset(pd.Timestamp('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NBYR"])-1)), day=int(self.cio["IDAL"])-1)       
     
-        self.output_start_date = np.datetime64('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NYSKIP"]))) + \
-                                 np.timedelta64(0 if self.cio["NYSKIP"]>'0' else int(self.cio["IDAF"]) - 1, 'D')
-        self.output_end_date   = np.datetime64('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NBYR"])-1)) + \
-                                 np.timedelta64(int(self.cio["IDAL"]) -1, 'D')
+        self.output_start_date = pd.Timestamp('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NYSKIP"]))) + \
+                                 pd.Timedelta(0 if self.cio["NYSKIP"]>'0' else int(self.cio["IDAF"]) - 1, 'D')
+        self.output_end_date   = pd.Timestamp('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NBYR"])-1)) + \
+                                 pd.Timedelta(int(self.cio["IDAL"]) -1, 'D')
     
     def read_sub(self):
         '''
@@ -123,7 +123,7 @@ class swat_reader():
                 step = {'0':'M', '1':'D', '2':'A'}
                 nsub = dat.RCH.max()
                 dat = dat[dat.MON <= 366] # remove the annual output
-                if self.cio['IPRINT'] == 0: # remove the ending statistics
+                if self.cio['IPRINT'] == '0': # remove the ending statistics for monthly output
                     dat = dat.iloc[:-nsub]                    
                 date_index = pd.date_range(self.output_start_date, self.output_end_date, freq=step[self.cio['IPRINT']])
                 dat.index = np.repeat(date_index, nsub)
@@ -164,11 +164,9 @@ class swat_reader():
             
         return df_filter
 #%%    
-def test_cls():
-    TxtInOut = r"C:\Users\Michael Ou\OneDrive\!Dissertation\SWAT_HYDRUS\@TxtInOut"   
+if __name__ == '__main__':
+    TxtInOut = r"D:\WorkSync\hydrology_swat_lab\LittleCreek1\Scenarios\Default\TxtInOut"   
     swatreader = swat_reader(TxtInOut)
-    
-    pd.DateOffset(pd.Timestamp('{}-01-01'.format(int(swatreader.cio["IYR"])+int(swatreader.cio["NYSKIP"]))), day=int(swatreader.cio["IDAF"])-1)
-    np.datetime64('{}-01-01'.format(int(swatreader.cio["IYR"])+int(swatreader.cio["NYSKIP"]))) + 1
+    swatreader.cio['IPRINT']
     
     df_out = swatreader.read_rch()

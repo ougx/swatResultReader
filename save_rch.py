@@ -57,6 +57,7 @@ if __name__ == '__main__':
     df_save = swat_reader.filter(df_out, args.subbasin, args.variable, args.freq, args.stat)
    
     # save the csv
+    df_out.to_csv('.'.join(args.output.split('.')[:-1] + ['all','csv']))
     df_save.to_csv(args.output)
     
     
