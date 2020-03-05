@@ -78,4 +78,4 @@ if __name__ == '__main__':
                 np.savetxt(fw, data.values, fmt='%7.0f' + '%5.1f' * nsite)
       
     
-    print('Climate data have been successfully changed'
+    print('Climate data have been successfully changed')
