@@ -54,6 +54,88 @@ class swat_reader():
         self.output_end_date   = pd.Timestamp('{}-01-01'.format(int(self.cio["IYR"])+int(self.cio["NBYR"])-1)) + \
                                  pd.Timedelta(int(self.cio["IDAL"]) -1, 'D')
     
+    def read_input_sub(self):
+        TxtInOut = self.TxtInOut
+        
+        with open(os.path.join(TxtInOut, 'fig.fig')) as fig:
+            figlines = fig.readlines()
+            
+        isub = 0
+        subhru = []
+        for i in np.nonzero(map(lambda x: 'subbasin' in x, figlines))[0] + 1:
+            isub += 1
+            with open(os.path.join(TxtInOut, figlines[i].strip())) as fsub:
+                sublines = fsub.readlines()
+                
+            
+            sub_area = float(sublines[1][:20])
+            ih = np.nonzero(map(lambda x: x.startswith('HRU: General'), sublines))[0][0]
+            
+            for ihru, l in enumerate(sublines[ih+1:]):
+                hru_val = [isub, ihru+1, sub_area]
+                
+                with open(os.path.join(TxtInOut, l[:13])) as fhru:
+                    hrulines = fhru.readlines()
+                    l0 = hrulines[0]
+                    hru_val.append(l0[l0.index('Luse:')+5:l0.index('Luse:')+10].strip())
+                    hru_val.append(l0[l0.index('Soil:')+5:l0.index('Soil:')+12].strip())
+                    hru_val.append(l0[l0.index('Slope:')+6:l0.index('Slope:')+14].strip())
+                    hru_val.append(float(hrulines[1][:20])) # frac
+                    hru_val.append(float(hrulines[4][:20])) # ov_n
+                    hru_val.append(float(hrulines[8][:20])) # canmx
+            
+                with open(os.path.join(TxtInOut, l[13:26])) as fhru:
+                    hrulines = fhru.readlines()
+                    hru_val.append(float(hrulines[10][:20])) # cn2
+                    hru_val.append(float(hrulines[11][:20])) # usle_p
+                    
+                    
+                subhru.append(hru_val)
+                    
+        self.subhru = pd.DataFrame(subhru, columns=['subbasin', 'hru', 'subarea', 'landuse', 'soil', 'slope', 'frac', 'ov_n', 'canmx', 'cn2', 'usle_p'])
+    
+    
+    def write_input_sub(self, subhru):
+        TxtInOut = self.TxtInOut
+        
+        with open(os.path.join(TxtInOut, 'fig.fig')) as fig:
+            figlines = fig.readlines()
+            
+        isub = 0
+        subfiles = np.array(figlines)[np.nonzero(map(lambda x: 'subbasin' in x, figlines))[0] + 1]
+        subfiles = np.char.strip(subfiles)
+        
+            
+            
+        for isub, df_hru in subhru.groupby('subbasin'):
+#            print(isub)
+            with open(os.path.join(TxtInOut, subfiles[isub - 1])) as fsub:
+                sublines = fsub.readlines()
+                ih = np.nonzero(map(lambda x: x.startswith('HRU: General'), sublines))[0][0]
+            
+            for ihru, r in df_hru.reset_index().iterrows():
+                l = sublines[ih +ihru + 1]
+                                
+                with open(os.path.join(TxtInOut, l[:13])) as fhru:
+                    hrulines = fhru.readlines()
+                
+                hrulines[1] = '{:<20}'.format(r.frac) + '| frac\n'
+                hrulines[4] = '{:<20}'.format(r.ov_n) + '| ov_n\n'
+                hrulines[8] = '{:<20}'.format(r.canmx) + '| canmx\n'
+                
+                with open(os.path.join(TxtInOut, l[:13]), 'w') as fhru:
+                    fhru.writelines(hrulines)
+            
+                with open(os.path.join(TxtInOut, l[13:26])) as fhru:
+                    hrulines = fhru.readlines()
+                
+                hrulines[10] = '{:<20}'.format(r.cn2) + '| cn2\n'
+                hrulines[11] = '{:<20}'.format(r.usle_p) + '| usle_p\n'                
+                
+                with open(os.path.join(TxtInOut, l[13:26]), 'w') as fhru:
+                    fhru.writelines(hrulines)
+                    
+        
     def read_sub(self):
         '''
         read SWAT output sub
@@ -63,8 +145,19 @@ class swat_reader():
         None.
 
         '''
+        
+    
+        self.sub = dict()
+        
         with open(os.path.join(self.TxtInOut, 'output.sub')) as f:
-            pass
+            for l in f:
+                if l.startswith('HRU: General'):
+                    break
+                
+            for l in f:
+                self.sub
+            
+        return lines
             
     
     
