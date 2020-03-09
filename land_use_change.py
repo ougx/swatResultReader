@@ -27,7 +27,7 @@ if __name__ == '__main__':
    
     
     # parser.print_help()
-    # args = parser.parse_args(r'D:\WorkSync\hydrology_swat_lab\LittleCreek1\Scenarios\Default\TxtInOut -r '.split())
+    # args = parser.parse_args(r'F:\Work\LC.Sufi2.SwatCup -w '.split())
     
     args = parser.parse_args()
     
@@ -45,7 +45,6 @@ if __name__ == '__main__':
             raise OSError(args.file + ' not found')
             
         subhru = pd.read_csv(args.file)
-        subhru.loc[0, 'cn2'] = 100
         swatreader.write_input_sub(subhru)
         
         print('Parameter data have been successfully written to model input files at {}'.format(args.TxtInOut))
