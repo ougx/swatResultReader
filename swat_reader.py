@@ -79,7 +79,7 @@ class swat_reader():
                     l0 = hrulines[0]
                     hru_val.append(l0[l0.index('Luse:')+5:l0.index('Luse:')+10].strip())
                     hru_val.append(l0[l0.index('Soil:')+5:l0.index('Soil:')+12].strip())
-                    hru_val.append(l0[l0.index('Slope:')+6:l0.index('Slope:')+14].strip())
+                    hru_val.append(l0[l0.index('Slope:')+6:l0.index('/')-2].strip())
                     hru_val.append(float(hrulines[1][:20])) # frac
                     hru_val.append(float(hrulines[4][:20])) # ov_n
                     hru_val.append(float(hrulines[8][:20])) # canmx

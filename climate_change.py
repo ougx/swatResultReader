@@ -41,8 +41,10 @@ if __name__ == '__main__':
     swatreader = swat_reader(args.TxtInOut)    
     
     # change temperature data
-    shutil.copy2(os.path.join(args.TxtInOut, 'pcp1.pcp'), os.path.join(args.TxtInOut, 'pcp1.pcp.bak'))
-    shutil.copy2(os.path.join(args.TxtInOut, 'Tmp1.Tmp'), os.path.join(args.TxtInOut, 'Tmp1.Tmp.bak'))
+    if not os.path.exists(os.path.join(args.TxtInOut, 'pcp1.pcp.bak')):
+        shutil.copy2(os.path.join(args.TxtInOut, 'pcp1.pcp'), os.path.join(args.TxtInOut, 'pcp1.pcp.bak'))
+    if not os.path.exists(os.path.join(args.TxtInOut, 'Tmp1.Tmp.bak')):
+        shutil.copy2(os.path.join(args.TxtInOut, 'Tmp1.Tmp'), os.path.join(args.TxtInOut, 'Tmp1.Tmp.bak'))
     
     if args.temperature != 0.0:
         with open(os.path.join(args.TxtInOut, 'Tmp1.Tmp.bak')) as fr:  

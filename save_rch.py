@@ -20,7 +20,7 @@ import os
 
 #%% set up the command
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Save desired resultd from SWAT output.rch to a CSV file')
+    parser = argparse.ArgumentParser(description='Save desired resultd from SWAT output.rch to CSV files')
     parser.add_argument('TxtInOut', help='TxtInOut directory path, required.')
     parser.add_argument('-b', '--subbasin',  default=[1], type=int,  nargs='*', help='Desired subbasin index/indices to save (default: %(default)s).')
     parser.add_argument('-v', '--variable',  default=["FLOW_OUTcms"], nargs='*', help='Desired variable to save (default: %(default)s).')

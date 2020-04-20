@@ -26,7 +26,7 @@ import numpy as np
 import datetime
 #%% some parameters
 ars_stations = [102, 106, 107, 110, 112]    
-start_date = np.datetime64('2005-08-01')
+start_date = np.datetime64('2006-01-01')
 end_date   = np.datetime64('2009-02-28')
 
 ars_weather_var = {'pcp':('RAINt', 1.0), 'rh':('RELHa', 0.01), 'tmp':(['TAIRx', 'TAIRn'], 1.0), 'srad':('SRADt', 1.0)}

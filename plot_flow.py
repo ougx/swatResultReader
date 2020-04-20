@@ -27,9 +27,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Plot streamflow from SWAT output.rch (against USGS measurements')
     parser.add_argument('TxtInOut', help='TxtInOut directory path, required.')
     parser.add_argument('-b', '--subbasin',  default=[1], type=int,  nargs='*', help='Desired subbasin index/indices to save (default: %(default)s).')
+    parser.add_argument('-u', '--usgs', nargs='*', help='The USGS site numbers corresponding to the subbasins')
     parser.add_argument('-o', '--output',    default='.', metavar='output_dir', help='Output directory for plots (default: %(default)s).')
     parser.add_argument('-p1', action='store_true', help='All the reaches will be plot on the same charts for each variable. ')
-    parser.add_argument('-u', '--unit',  default='m', choices=['m','f','af'], help='The unit for flow volume m:meters; f:feet; af:acre-feet')
+    parser.add_argument('-l', '--lengthunit',  default='m', choices=['m','f','af'], help='The unit for flow volume m:meters; f:feet; af:acre-feet')
     parser.add_argument('-t', '--timeunit',  default='s', choices=['s','d'], help='The unit for flow volume s:second; d:day; m:month; y:year')
     parser.add_argument('-p', '--prefix',  default='', help='Prefix for plot file names')
     parser.add_argument('-l', '--log', action='store_true',  default=False, help='Prefix for plot file names')
@@ -38,7 +39,6 @@ if __name__ == '__main__':
     parser.add_argument('-sls', type=str,  default='-', help='Line style for simulated streamflow')
     parser.add_argument('-ols', type=str,  default='-', help='Line style for observed streamflow')
     parser.add_argument('-fs', '--figsize', default=(8, 4), nargs=2, help='Figure size')
-    parser.add_argument('--usgs', nargs='*', help='The USGS site numbers to ')
     parser.add_argument('-n', type=int,   default=100, metavar='minimum_number_record', help='The minimum observation record number of a gauge. \
                         If the number of record during the output period is smaller than this number, the usgs site will not included in the plot. (default: %(default)s).')
 
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     
     # print(args)
     if args.usgs is not None:
-        assert len(args.subbasin) == len(args.usgs), 'The stat method numbers need to match the variale number.'
+        assert len(args.subbasin) == len(args.usgs), 'The subbasin number need to the gaging station number.'
             
     # read the output.rch file:
     swatreader = swat_reader(args.TxtInOut)
