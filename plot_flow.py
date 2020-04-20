@@ -33,7 +33,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--lengthunit',  default='m', choices=['m','f','af'], help='The unit for flow volume m:meters; f:feet; af:acre-feet')
     parser.add_argument('-t', '--timeunit',  default='s', choices=['s','d'], help='The unit for flow volume s:second; d:day; m:month; y:year')
     parser.add_argument('-p', '--prefix',  default='', help='Prefix for plot file names')
-    parser.add_argument('-l', '--log', action='store_true',  default=False, help='Prefix for plot file names')
+    parser.add_argument('--log', action='store_true',  default=False, help='Prefix for plot file names')
     parser.add_argument('-slw', type=float,  default=1.0, help='Line width for simulated streamflow')
     parser.add_argument('-olw', type=float,  default=0.8, help='Line width for observed streamflow')
     parser.add_argument('-sls', type=str,  default='-', help='Line style for simulated streamflow')
