@@ -108,7 +108,7 @@ if __name__ == '__main__':
             
             observed = flow
                 
-            observed = pd.to_numeric(observed, errors='coerce').dropna() * length_factor_usgs[args.unit]
+            observed = pd.to_numeric(observed, errors='coerce').dropna() * length_factor_usgs[args.lengthunit]
             observed.index = pd.DatetimeIndex(observed.index)            
             observed.plot( ax=ax, label='Observed',  legend=True, linewidth=args.olw, linestyle=args.ols)
             observed.name = 'Observed'
@@ -118,7 +118,7 @@ if __name__ == '__main__':
             ax.set_yscale('log')
         ax.set_title(gauge_names[u])
         ax.set_xlabel('Time')
-        ax.set_ylabel('Streamflow ({}/{})'.format(length_label[args.unit], time_label[args.timeunit]))
+        ax.set_ylabel('Streamflow ({}/{})'.format(length_label[args.lengthunit], time_label[args.timeunit]))
         fig.savefig(os.path.join(args.output, '{}{}.png'.format(args.prefix, s)), dpi=300)
         csv.to_csv(os.path.join(args.output, '{}{}.csv'.format(args.prefix, s)))
 
