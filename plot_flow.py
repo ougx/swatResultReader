@@ -69,7 +69,7 @@ if __name__ == '__main__':
     length_label = dict(m='meter$^3$', f='feet$^3$', af='acre-feet')
 
 
-    df_filter *= length_factor[args.unit] * time_factor[args.timeunit]
+    df_filter *= length_factor[args.lengthunit] * time_factor[args.timeunit]
     df_filter.columns = ['Simulated']
     # print('df_fileter:\n', df_filter)
     # download the USGS data
